@@ -1,9 +1,15 @@
 
 EAPI_DIR = ../../eapi
 include $(EAPI_DIR)/make/eapi_drv.mk
+# FIXME config - require >= libusb-1.0 
+ifeq ($(OSNAME), Linux)
+LIBUSB_DIR=/usr
+else
+LIBUSB_DIR=/usr/local
+endif
 
-CFLAGS += -I $(EAPI_DIR)/include -I /usr/local/include/libusb-1.0
-LDFLAGS += -L/usr/local/lib -lusb-1.0
+CFLAGS += -I $(EAPI_DIR)/include -I $(LIBUSB_DIR)/include/libusb-1.0
+LDFLAGS += -L$(LIBUSB_DIR)/lib -lusb-1.0
 
 LIBUSB_DRV = $(PRIVDIR)/libusb_drv.so
 LIBUSB_DRV_OBJS = \
