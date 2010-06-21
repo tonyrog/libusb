@@ -1,0 +1,4 @@
+Erlang binding to libusb.
+
+Work in progress.
+libusb has dependencies to eapi.
