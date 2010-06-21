@@ -4,7 +4,7 @@
 #include <poll.h>
 #include "libusb.h"
 #include "eapi_drv.h"
-#include "libusb_api.h"
+#include "libusb_drv.h"
 
 ErlDrvTermData am_libusb_transfer_completed;
 ErlDrvTermData am_libusb_transfer_error;
@@ -850,14 +850,14 @@ void libusb_drv_impl_control_transfer_write(
     uint8_t request,
     uint16_t value,
     uint16_t index,
-    eapi_binary_t data,
+    eapi_binary_t* data,
     unsigned int timeout)
 {
     int r = LIBUSB_ERROR_NO_MEM;
     struct libusb_transfer *transfer = 0;
     transfer_data_t* td = 0;
-    ErlDrvBinary* bin = data.bin;
-    uint16_t length;
+    ErlDrvBinary* ctrl;
+    ErlDrvBinary* bin = data->bin;
 
     if (!dev_handle ||
 	(request_type & LIBUSB_ENDPOINT_DIR_MASK) != LIBUSB_ENDPOINT_OUT) {
@@ -867,19 +867,19 @@ void libusb_drv_impl_control_transfer_write(
 
     if (!(transfer = libusb_alloc_transfer(0)))
 	goto error;
-    length = bin->orig_size - data.offset;
-    if (!(bin = driver_alloc_binary(LIBUSB_CONTROL_SETUP_SIZE + length)))
+    if (!(ctrl = driver_alloc_binary(LIBUSB_CONTROL_SETUP_SIZE + data->len)))
 	goto error;
-    if (!(td = transfer_item_new(ctx, bin, transfer)))
+    if (!(td = transfer_item_new(ctx, ctrl, transfer)))
 	goto error;
+    driver_free_binary(ctrl);  // deref, td will keep one ref! 
     
-    libusb_fill_control_setup((unsigned char*)bin->orig_bytes,
+    libusb_fill_control_setup((unsigned char*)ctrl->orig_bytes,
 			      request_type, request,
-			      value, index, length);
+			      value, index, data->len);
 
-    memcpy(bin->orig_bytes + LIBUSB_CONTROL_SETUP_SIZE,
-	   (unsigned char*)(bin->orig_bytes + data.offset),
-	   length);
+    memcpy(ctrl->orig_bytes + LIBUSB_CONTROL_SETUP_SIZE,
+	   (unsigned char*)(bin->orig_bytes + data->offset),
+	   data->len);
 
     libusb_fill_control_transfer(transfer, dev_handle,
 				 (unsigned char*) bin->orig_bytes,
@@ -964,13 +964,13 @@ void libusb_drv_impl_bulk_transfer_write(
     eapi_ctx_t* ctx,cbuf_t* c_out,
     libusb_device_handle* dev_handle,
     uint8_t endpoint,
-    eapi_binary_t data,
+    eapi_binary_t* data,
     unsigned int timeout)
 {
     int r = LIBUSB_ERROR_NO_MEM;
     struct libusb_transfer *transfer = 0;
     transfer_data_t* td = 0;
-    ErlDrvBinary* bin = data.bin;
+    ErlDrvBinary* bin = data->bin;
 
     if (!dev_handle ||
 	(endpoint & LIBUSB_ENDPOINT_DIR_MASK) != LIBUSB_ENDPOINT_OUT) {
@@ -984,8 +984,7 @@ void libusb_drv_impl_bulk_transfer_write(
 
     libusb_fill_bulk_transfer(
 	transfer, dev_handle, endpoint,
-	(unsigned char*)(bin->orig_bytes + data.offset),
-	bin->orig_size - data.offset,
+	(unsigned char*)(bin->orig_bytes + data->offset), data->len,
 	transfer_write_cb, td, timeout);
 
     if ((r = libusb_submit_transfer(transfer)) < 0)
@@ -1059,13 +1058,13 @@ void libusb_drv_impl_interrupt_transfer_write(
     eapi_ctx_t* ctx,cbuf_t* c_out,
     libusb_device_handle* dev_handle,
     uint8_t endpoint,
-    eapi_binary_t data,
+    eapi_binary_t* data,
     unsigned int timeout)
 {
     int r = LIBUSB_ERROR_NO_MEM;
     struct libusb_transfer *transfer = 0;
     transfer_data_t* td = 0;
-    ErlDrvBinary* bin = data.bin;
+    ErlDrvBinary* bin = data->bin;
 
     if (!dev_handle ||
 	(endpoint & LIBUSB_ENDPOINT_DIR_MASK) != LIBUSB_ENDPOINT_OUT) {
@@ -1080,8 +1079,7 @@ void libusb_drv_impl_interrupt_transfer_write(
 
     libusb_fill_interrupt_transfer(
 	transfer, dev_handle, endpoint,
-	(unsigned char*)(bin->orig_bytes + data.offset),
-	bin->orig_size - data.offset,
+	(unsigned char*)(bin->orig_bytes + data->offset), data->len,
 	transfer_write_cb, td, timeout);
 
     if ((r = libusb_submit_transfer(transfer)) < 0)
@@ -1155,7 +1153,7 @@ void libusb_drv_impl_iso_transfer_write(
     eapi_ctx_t* ctx,cbuf_t* c_out,
     libusb_device_handle* dev_handle,
     uint8_t endpoint,
-    eapi_binary_t data,
+    eapi_binary_t* data,
     int num_iso_packets,
     unsigned int packet_size,
     unsigned int timeout)
@@ -1163,7 +1161,7 @@ void libusb_drv_impl_iso_transfer_write(
     int r = LIBUSB_ERROR_NO_MEM;
     struct libusb_transfer *transfer = 0;
     transfer_data_t* td = 0;
-    ErlDrvBinary* bin = bin;
+    ErlDrvBinary* bin = data->bin;
 
     if (!dev_handle ||
 	(endpoint & LIBUSB_ENDPOINT_DIR_MASK) != LIBUSB_ENDPOINT_OUT) {
@@ -1177,8 +1175,8 @@ void libusb_drv_impl_iso_transfer_write(
 
     libusb_fill_iso_transfer(
 	transfer, dev_handle, endpoint,
-	(unsigned char*)(bin->orig_bytes + data.offset),
-	bin->orig_size - data.offset,
+	(unsigned char*)(bin->orig_bytes + data->offset),
+	bin->orig_size - data->offset,
 	num_iso_packets,
 	transfer_write_cb, td, timeout);
     libusb_set_iso_packet_lengths(transfer, packet_size);

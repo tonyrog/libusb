@@ -11,7 +11,7 @@
 -module(ftdi).
 -compile(export_all).
 
--include("libusb.hrl").
+-include("libusb_drv.hrl").
 
 
 -define(VID_FTDI,   16#0403).

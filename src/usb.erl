@@ -6,7 +6,7 @@
 -compile(export_all).
 -import(lists, [foreach/2, foldl/3]).
 
--include("libusb.hrl").
+-include("libusb_drv.hrl").
 
 -export([i/0]).
 

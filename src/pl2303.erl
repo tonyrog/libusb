@@ -3,7 +3,7 @@
 %%
 -module(pl2303).
 
--include("libusb.hrl").
+-include("libusb_drv.hrl").
 -include("pl2303.hrl").
 
 -export([set_configuration/5, get_configuration/1]).
