@@ -1,0 +1,9 @@
+{application, libusb,
+ [{description, "libusb erlang api"},
+  {vsn, "%VSN%"},
+  {modules, [usb, libusb_drv, libusb_sup, libusb_app]},
+  {registered, [libusb_srv]},
+  {mod,{libusb_app,[]}},
+  {env, []},
+  {applications,[kernel,stdlib]}
+  ]}.

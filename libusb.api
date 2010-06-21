@@ -1,0 +1,370 @@
+%% -*- erlang -*-
+%% 
+%%  Generate:
+%%    eapi:erl("libusb.api", "src/libusb_drv").
+%%    eapi:c("libusb.api",   "c_src/libusb_drv").
+%%
+
+%% Function prefix for implement functions
+{c_function_prefix, "libusb_drv_impl"}.
+{c_symbol_prefix, "libusb_drv"}.
+{c_include, "\"libusb.h\""}.
+
+{erl_symbol_prefix, "libusb"}.
+{erl_default_interface, command}.
+%% {erl_default_interface, control}.
+%% {erl_port_name,     "libusb_prt"}.
+%% {erl_srv_name,      "libusb_srv"}.
+%% {erl_reg_name,      "libusb_reg"}.
+%% {erl_driver_name,   "libusb_drv"}.
+
+{erl_include, "\"../include/libusb.hrl\""}.
+
+{typedef, libusb_device,        pointer_t}.
+{typedef, libusb_device_handle, pointer_t}.
+{typedef, ok,     {const, atom_t, ok}}.
+{typedef, void,   {const, atom_t, ok}}.
+{typedef, error,  {tuple,[{const,atom_t,error},atom_t]}}.
+
+{enum,[extern],libusb_class_code, uint8_t,
+ [
+  {'LIBUSB_CLASS_PER_INTERFACE', 0},
+  {'LIBUSB_CLASS_AUDIO',         1},
+  {'LIBUSB_CLASS_COMM',          2},
+  {'LIBUSB_CLASS_HID',           3},
+  {'LIBUSB_CLASS_PRINTER',       7},
+  {'LIBUSB_CLASS_PTP',           6},
+  {'LIBUSB_CLASS_MASS_STORAGE',  8},
+  {'LIBUSB_CLASS_HUB',           9},
+  {'LIBUSB_CLASS_DATA',         10},
+  {'LIBUSB_CLASS_VENDOR_SPEC',  16#ff}
+ ]}.
+
+{enum,[extern],libusb_descriptor_type, uint8_t,
+ [
+  {'LIBUSB_DT_DEVICE',    16#01},
+  {'LIBUSB_DT_CONFIG',    16#02},
+  {'LIBUSB_DT_STRING',    16#03},
+  {'LIBUSB_DT_INTERFACE', 16#04},
+  {'LIBUSB_DT_ENDPOINT',  16#05},
+  {'LIBUSB_DT_HID',       16#21},
+  {'LIBUSB_DT_REPORT',    16#22},
+  {'LIBUSB_DT_PHYSICAL',  16#23},
+  {'LIBUSB_DT_HUB',       16#29}
+ ]}.
+
+
+{enum,[extern],libusb_transfer_type, uint8_t,
+ [
+  {'LIBUSB_TRANSFER_TYPE_CONTROL',     0},
+  {'LIBUSB_TRANSFER_TYPE_ISOCHRONOUS', 1},
+  {'LIBUSB_TRANSFER_TYPE_BULK',        2},
+  {'LIBUSB_TRANSFER_TYPE_INTERRUPT',   3}
+ ]}.
+
+{enum,[extern],libusb_standard_request,  uint8_t,
+ [
+  {'LIBUSB_REQUEST_GET_STATUS', 16#00},
+  {'LIBUSB_REQUEST_CLEAR_FEATURE', 16#01},
+  {'LIBUSB_REQUEST_SET_FEATURE', 16#03},
+  {'LIBUSB_REQUEST_SET_ADDRESS', 16#05},
+  {'LIBUSB_REQUEST_GET_DESCRIPTOR', 16#06},
+  {'LIBUSB_REQUEST_SET_DESCRIPTOR', 16#07},
+  {'LIBUSB_REQUEST_GET_CONFIGURATION', 16#08},
+  {'LIBUSB_REQUEST_SET_CONFIGURATION', 16#09},
+  {'LIBUSB_REQUEST_GET_INTERFACE',     16#0A},
+  {'LIBUSB_REQUEST_SET_INTERFACE',     16#0B},
+  {'LIBUSB_REQUEST_SYNCH_FRAME',       16#0C}
+ ]}.
+
+%% RequestType bits
+{enum,[extern],libusb_endpoint_direction, uint8_t,
+ [  %% In: device-to-host */
+    {'LIBUSB_ENDPOINT_IN', 16#80},
+    
+    %% Out: host-to-device 
+    {'LIBUSB_ENDPOINT_OUT', 16#00}
+ ]}.
+
+%% RequestType bits
+{enum,[extern],libusb_request_type, uint8_t,
+ [
+  {'LIBUSB_REQUEST_TYPE_STANDARD',  16#00},
+  {'LIBUSB_REQUEST_TYPE_CLASS',     16#20}, %%  (0x01 << 5)
+  {'LIBUSB_REQUEST_TYPE_VENDOR',    16#40}, %%  (0x02 << 5)
+  {'LIBUSB_REQUEST_TYPE_RESERVED',  16#60}  %%  (0x03 << 5)
+  ]}.
+
+%% bmRequestType Values 4 through 31 are reserved.
+{enum,[extern],libusb_request_recipient, uint8_t,
+ [
+  {'LIBUSB_RECIPIENT_DEVICE',     16#00},
+  {'LIBUSB_RECIPIENT_INTERFACE',  16#01},
+  {'LIBUSB_RECIPIENT_ENDPOINT',   16#02},
+  {'LIBUSB_RECIPIENT_OTHER',      15#03}
+ ]}.
+
+%% bits for control_setup bmRequestType field
+{enum,[extern],libusb_iso_sync_type,  uint8_t,
+ [
+  {'LIBUSB_ISO_SYNC_TYPE_NONE',     16#00},
+  {'LIBUSB_ISO_SYNC_TYPE_ASYNC',    16#20},
+  {'LIBUSB_ISO_SYNC_TYPE_ADAPTIVE', 16#40},
+  {'LIBUSB_ISO_SYNC_TYPE_SYNC',     16#60}
+ ]}.
+
+
+
+{struct,[extern],libusb_device_descriptor,
+ [
+  {uint8_t,  bLength}, 
+  {uint8_t,  bDescriptorType},
+  {uint16_t, bcdUSB}, 
+  {uint8_t,  bDeviceClass},
+  {uint8_t,  bDeviceSubClass},
+  {uint8_t,  bDeviceProtocol},
+  {uint8_t,  bMaxPacketSize0},
+  {uint16_t, idVendor},
+  {uint16_t, idProduct},
+  {uint16_t, bcdDevice},
+  {uint8_t,  iManufacturer},
+  {uint8_t,  iProduct},
+  {uint8_t,  iSerialNumber},
+  {uint8_t,  bNumConfigurations}
+ ]}.
+
+{struct,[extern],libusb_endpoint_descriptor,
+ [
+  {uint8_t, bLength}, 
+  {uint8_t, bDescriptorType},
+  {uint8_t, bEndpointAddress},
+  {uint8_t, bmAttributes},
+  {uint16_t, wMaxPacketSize},
+  {uint8_t,  bInterval},
+  {uint8_t,  bRefresh},
+  {uint8_t,  bSynchAddress},
+  {binary_t, [{size,extra_length}], extra},
+  {int,      extra_length}
+ ]}.
+
+{struct,[extern],libusb_interface_descriptor,
+ [
+  {uint8_t, bLength}, 
+  {uint8_t, bDescriptorType},
+  {uint8_t, bInterfaceNumber},
+  {uint8_t, bAlternateSetting},
+  {uint8_t, bNumEndpoints},
+  {uint8_t, bInterfaceClass},
+  {uint8_t, bInterfaceSubClass},
+  {uint8_t, bInterfaceProtocol},
+  {uint8_t, iInterface},
+  {{list,libusb_endpoint_descriptor},[{size,bNumEndpoints}], endpoint},
+  {binary_t, [{size,extra_length}], extra},
+  {int,      extra_length}
+ ]}.
+
+{struct,[extern],libusb_interface,
+ [{{list,libusb_interface_descriptor},[{size,num_altsetting}], altsetting},
+  {int, num_altsetting}
+ ]}.
+
+{struct,[extern],libusb_config_descriptor,
+ [
+  {uint8_t,  bLength}, 
+  {uint8_t,  bDescriptorType},
+  {uint16_t, wTotalLength},
+  {uint8_t,  bNumInterfaces},
+  {uint8_t,  bConfigurationValue},
+  {uint8_t,  iConfiguration},
+  {uint8_t,  bmAttributes},
+  {uint8_t,  'MaxPower'},
+  {{list,libusb_interface},[{size,bNumInterfaces}], interface},
+  {binary_t, [{size,extra_length}], extra},
+  {int,      extra_length}
+ ]}.
+
+{function, void,
+ set_debug,
+ [{int_t,level}]}.
+      
+{function, {list,libusb_device}, 
+ get_device_list, 
+ []}.
+ 
+{function, {union,[{tuple,[ok,int_t]},error]},
+ get_configuration, 
+ [{libusb_device_handle,dev_handle}]}.
+
+{function, {union,[{tuple,[ok,libusb_device_descriptor]}, error]},
+ get_device_descriptor,
+ [{libusb_device,dev}]}.
+
+{function,{union,[{tuple,[ok,libusb_config_descriptor]}, error]},
+ get_active_config_descriptor,
+ [{libusb_device,dev}]}.
+
+{function, {union,[{tuple,[ok,libusb_config_descriptor]}, error]},
+ get_config_descriptor,
+ [{libusb_device,dev}, {uint8_t,config_index}]}.
+
+{function, {union,[{tuple,[ok,libusb_config_descriptor]}, error]},
+ get_config_descriptor_by_value,
+ [{libusb_device,dev},
+  {uint8_t,configurationValue}]}.
+
+{function, {union,[{tuple,[ok,uint8_t]}, error]},
+ get_bus_number, 
+ [{libusb_device,dev}]}.
+
+{function, {union,[{tuple,[ok,uint8_t]}, error]},
+ get_device_address,
+ [{libusb_device,dev}]}.
+
+{function, {union,[{tuple,[ok,int_t]}, error]},
+ get_max_packet_size,  
+ [{libusb_device,dev},
+  {uint8_t,endPoint}]}.
+
+{function,  {union,[{tuple,[ok,int_t]}, error]},
+ get_max_iso_packet_size, 
+ [{libusb_device,dev},
+  {uint8_t,endPoint}]}.
+     
+{function, {union,[{tuple,[ok,libusb_device_handle]}, error]},
+ open,  
+ [{libusb_device,dev}]}.
+
+{function, void, close,
+ [{libusb_device_handle,dev_handle}]}.
+
+{function, {union,[ok,error]},
+ set_configuration,
+ [{libusb_device_handle,dev_handle},
+  {int_t,configuration}]}.
+
+{function, {union,[ok,error]},
+ claim_interface,
+ [{libusb_device_handle,dev_handle},
+  {int_t,iface}]}.
+
+{function, {union,[ok,error]},
+ release_interface,
+ [{libusb_device_handle,dev_handle},
+  {int_t,iface}]}.
+
+{function, {union,[{tuple,[ok,libusb_device_handle]}, error]},
+ open_device_with_vid_pid,
+ [{uint16_t,vendor_id},
+  {uint16_t,product_id}]}.
+
+{function, {union,[ok,error]},
+ set_interface_alt_setting,
+ [{libusb_device_handle,dev_handle},
+  {int_t,interface_number},
+  {int_t,alternate_setting}]}.
+
+{function, {union,[ok,error]},
+ clear_halt,
+ [{libusb_device_handle,dev_handle},
+  {int_t,endpoint}]}.
+
+{function, {union,[ok,error]},
+ reset_device,
+ [{libusb_device_handle,dev_handle}]}.
+
+{function,  {union,[{tuple,[ok,uint32_t]},error]},
+ control_transfer_write,
+ [{libusb_device_handle, dev_handle},
+  {uint8_t, request_type},
+  {uint8_t, request},
+  {uint16_t, value},
+  {uint16_t, index},
+  {binary_t, data},
+  {uint_t, timeout}
+ ]}.
+
+{function,  {union,[{tuple,[ok,uint32_t]},error]},
+ control_transfer_read,
+ [{libusb_device_handle, dev_handle},
+  {uint8_t, request_type},
+  {uint8_t, request},
+  {uint16_t, value},
+  {uint16_t, index},
+  {uint16_t, length},
+  {uint_t, timeout}
+ ]}.
+
+{function, {union,[{tuple,[ok,uint32_t]},error]},
+ bulk_transfer_write,
+ [{libusb_device_handle,dev_handle},
+  {uint8_t, endpoint},
+  {binary_t, data},
+  {uint_t, timeout}
+ ]}.
+
+{function,  {union,[{tuple,[ok,uint32_t]},error]},
+ bulk_transfer_read,
+ [{libusb_device_handle,dev_handle},
+  {uint8_t, endpoint},
+  {int_t, length},
+  {uint_t, timeout}
+]}.
+
+{function,  {union,[{tuple,[ok,uint32_t]},error]},
+ interrupt_transfer_write,
+ [{libusb_device_handle,dev_handle},
+  {uint8_t, endpoint},
+  {binary_t, data},
+  {uint_t, timeout}
+]}.
+
+{function, {union,[{tuple,[ok,uint32_t]},error]},
+ interrupt_transfer_read,
+ [{libusb_device_handle,dev_handle},
+  {uint8_t, endpoint},
+  {int_t, length},
+  {uint_t, timeout}
+ ]}.
+
+{function,  {union,[{tuple,[ok,uint32_t]},error]},
+ iso_transfer_write,
+ [{libusb_device_handle,dev_handle},
+  {uint8_t, endpoint},
+  {binary_t, data},
+  {int_t,    num_iso_packets},
+  {uint_t,   packet_size},
+  {uint_t, timeout}
+]}.
+
+{function, {union,[{tuple,[ok,uint32_t]},error]},
+ iso_transfer_read,
+ [{libusb_device_handle,dev_handle},
+  {uint8_t, endpoint},
+  {int_t,   length},
+  {int_t,   num_iso_packets},
+  {uint_t,  packet_size},
+  {uint_t,  timeout}
+ ]}.
+
+{function, {union,[ok,error]},
+ cancel_transfer,
+ [{uint32_t, ref}]}.
+
+{function, {union,[{tuple,[ok,boolean_t]}, error]},
+ kernel_driver_active,
+ [{libusb_device_handle,dev_handle},
+  {int, interface}
+ ]}.
+
+{function, {union,[ok,error]},
+ detach_kernel_driver,
+ [{libusb_device_handle,dev_handle},
+  {int, interface}
+ ]}.
+
+{function, {union,[ok,error]},
+ attach_kernel_driver,
+ [{libusb_device_handle,dev_handle},
+  {int, interface}
+ ]}.
+
