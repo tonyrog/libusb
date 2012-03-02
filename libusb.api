@@ -25,6 +25,7 @@
 {typedef, ok,     {const, atom_t, ok}}.
 {typedef, void,   {const, atom_t, ok}}.
 {typedef, error,  {tuple,[{const,atom_t,error},atom_t]}}.
+{typedef, status_t, {union, [ok, error]}}.
 
 {enum,[extern],libusb_class_code, uint8_t,
  [
@@ -237,17 +238,17 @@
 {function, void, close,
  [{libusb_device_handle,dev_handle}]}.
 
-{function, {union,[ok,error]},
+{function, status_t,
  set_configuration,
  [{libusb_device_handle,dev_handle},
   {int_t,configuration}]}.
 
-{function, {union,[ok,error]},
+{function, status_t,
  claim_interface,
  [{libusb_device_handle,dev_handle},
   {int_t,iface}]}.
 
-{function, {union,[ok,error]},
+{function, status_t,
  release_interface,
  [{libusb_device_handle,dev_handle},
   {int_t,iface}]}.
@@ -257,18 +258,18 @@
  [{uint16_t,vendor_id},
   {uint16_t,product_id}]}.
 
-{function, {union,[ok,error]},
+{function, status_t,
  set_interface_alt_setting,
  [{libusb_device_handle,dev_handle},
   {int_t,interface_number},
   {int_t,alternate_setting}]}.
 
-{function, {union,[ok,error]},
+{function, status_t,
  clear_halt,
  [{libusb_device_handle,dev_handle},
   {int_t,endpoint}]}.
 
-{function, {union,[ok,error]},
+{function, status_t,
  reset_device,
  [{libusb_device_handle,dev_handle}]}.
 
@@ -346,7 +347,7 @@
   {uint_t,  timeout}
  ]}.
 
-{function, {union,[ok,error]},
+{function, status_t,
  cancel_transfer,
  [{uint32_t, ref}]}.
 
@@ -356,13 +357,13 @@
   {int, interface}
  ]}.
 
-{function, {union,[ok,error]},
+{function, status_t,
  detach_kernel_driver,
  [{libusb_device_handle,dev_handle},
   {int, interface}
  ]}.
 
-{function, {union,[ok,error]},
+{function, status_t,
  attach_kernel_driver,
  [{libusb_device_handle,dev_handle},
   {int, interface}
